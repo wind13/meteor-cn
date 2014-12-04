@@ -1,6 +1,6 @@
 meteor-cn
 =========
 
-Chinese tutorial and related documents of Meteor.com 
+Chinese tutorial and related documents of [Meteor.com](http://www.meteor.com) 
 
-## [中文教程（Chinese tutorial）](tutorial.md)
+## [Meteor框架中文教程（Chinese tutorial）](tutorial.md)
