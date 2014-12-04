@@ -210,3 +210,103 @@ When you make these changes to the code, you'll notice that the tasks that used 
 
 当你修改这些代码，你将看到列表中的 ToDo 项目消失了。这是因为我们的数据库现在是空的——我们需要添加一些任务！
 
+### Inserting tasks from the console
+### 从控制台添加任务
+
+Items inside collections are called documents. Let's use the server database console to insert some documents into our collection. In a new terminal tab, go to your app directory and type:
+
+在集合里面的项目叫文档。让我们用服务端的数据库控制台给集合里添加一些文档。在一个新的终端里，进入你的 App 目录并且键入：
+
+```
+meteor mongo
+```
+
+This opens a console into your app's local development database. Into the prompt, type:
+
+这会打开一个控制台进入到你的 App 的本地开发数据库。在命令行里键入：
+
+```
+db.tasks.insert({ text: "Hello world!", createdAt: new Date() });
+```
+
+In your web browser, you will see the UI of your app immediately update to show the new task. You can see that we didn't have to write any code to connect the server-side database to our front-end code — it just happened automatically.
+
+在你的网页浏览器，你会看到你的 App 马上就显示了这些新任务。你能看到我们不需要写什么代码就连接到服务端的数据库到前端的代码了，它就是这样自动发生了。
+
+Insert a few more tasks from the database console with different text. In the next step, we'll see how to add functionality to our app's UI so that we can add tasks without using the database console.
+
+再插入一些不同的任务到数据库。在下一节，我们将学习如何不使用数据库控制台而是通过我们的 App 界面添加任务的功能。
+
+#### See the code for step 3 on GitHub!
+  * [simple-todos.html](https://github.com/meteor/simple-todos/blob/ab14d317db174a3b2d408f4e24a50c7af13342cd/simple-todos.html)
+  * [simple-todos.js](https://github.com/meteor/simple-todos/blob/ab14d317db174a3b2d408f4e24a50c7af13342cd/simple-todos.js)
+  * [simple-todos.css](https://github.com/meteor/simple-todos/blob/ab14d317db174a3b2d408f4e24a50c7af13342cd/simple-todos.css)
+  * [diff of all files](https://github.com/meteor/simple-todos/commit/ab14d317db174a3b2d408f4e24a50c7af13342cd)
+
+### Adding tasks with a form
+
+In this step, we'll add an input field for users to add tasks to the list.
+
+在这一节，我们要添加一个输入框架用来添加任务到列表中。
+
+First, let's add a form to our HTML:
+
+首先，让我们添加一个 Form 表单到我们的 HTML 中：
+
+```
+<header>
+  <h1>Todo List</h1>
+
+  <!-- add a form below the h1 -->
+  <form class="new-task">
+    <input type="text" name="text" placeholder="Type to add new tasks" />
+  </form>
+</header>
+```
+Here's the JavaScript code we need to add to listen to the submit event on the form:
+
+这些是 JavaScript 代码，我们需要在这个 Form 上添加监听提交事件：
+
+```
+// Inside the if (Meteor.isClient) block, right after Template.body.helpers:
+Template.body.events({
+  "submit .new-task": function (event) {
+    // This function is called when the new task form is submitted
+
+    var text = event.target.text.value;
+
+    Tasks.insert({
+      text: text,
+      createdAt: new Date() // current time
+    });
+
+    // Clear form
+    event.target.text.value = "";
+
+    // Prevent default form submit
+    return false;
+  }
+});
+```
+Now your app has a new input field. To add a task, just type into the input field and hit enter. If you open a new browser window and open the app again, you'll see that the list is automatically synchronized between all clients.
+
+现在你的 App 有一个新的输入框了。要添加一个任务，只需要在输入框中打字然后按回车就行了。如果你打开一个新的浏览器窗口并且打开这个 App，你就会看到那个列表自动在所有客户端之间同步了。
+
+### Attaching events to templates
+### 附加事件到模板中
+
+Event listeners are added to templates in much the same way as helpers are: by calling Template.templateName.events(...) with a dictionary. The keys describe the event to listen for, and the values are event handlers that are called when the event happens.
+
+事件监听添加到模板的办法几乎是一样的：通过调用 Template.templateName.events(...) 里面放一个 dictionary（键值对）。其中 key 键指的是所监听的事件名称，而值里面放的是事件发生后所要执行的方法。
+
+In our case above, we are listening to the submit event on any element that matches the CSS selector .new-task. When this event is triggered by the user pressing enter inside the input field, our event handler function is called.
+
+在我们上面的例子中，我们监听了匹配这个 CSS 选择器 .new-task 的提交事件。当这些事件被用户在输入框中敲回车键时被触发，我们的事件响应方法就会被执行。
+
+The event handler gets an argument called event that has some information about the event that was triggered. In this case event.target is our form element, and we can get the value of our input with event.target.text.value. You can see all of the other properties of the event object by adding a console.log(event) and inspecting the object in your browser console.
+
+接收事件的方法收到一个叫 event 的参数，里面包含触发的这个事件的一些信息。在这个例子里 event.target 就是我们的 form 对象，并且我们可以通过 event.target.text.value 来取得我们输入的值。你可以通过在你的浏览器控制台里添加一个 console.log(event) 来仔细观察这个事件对象的其他属性。
+
+The last two lines of our event handler perform some cleanup — first we make sure to make the input blank, and then we return false to tell the web browser to not do the default form submit action since we have already handled it.
+
+那接收事件的方法最后两行执行了一些清除工作——首先我们清空了输入框，其次我们返回了 false 告诉网页浏览器不要执行默认的表单提交动作，因为我们已经处理它了。
