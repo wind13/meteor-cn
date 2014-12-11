@@ -288,6 +288,7 @@ Template.body.events({
   }
 });
 ```
+
 Now your app has a new input field. To add a task, just type into the input field and hit enter. If you open a new browser window and open the app again, you'll see that the list is automatically synchronized between all clients.
 
 现在你的 App 有一个新的输入框了。要添加一个任务，只需要在输入框中打字然后按回车就行了。如果你打开一个新的浏览器窗口并且打开这个 App，你就会看到那个列表自动在所有客户端之间同步了。
@@ -295,18 +296,59 @@ Now your app has a new input field. To add a task, just type into the input fiel
 ### Attaching events to templates
 ### 附加事件到模板中
 
-Event listeners are added to templates in much the same way as helpers are: by calling Template.templateName.events(...) with a dictionary. The keys describe the event to listen for, and the values are event handlers that are called when the event happens.
+Event listeners are added to templates in much the same way as helpers are: by calling `Template.templateName.events(...)` with a dictionary. The keys describe the event to listen for, and the values are event handlers that are called when the event happens.
 
-事件监听添加到模板的办法几乎是一样的：通过调用 Template.templateName.events(...) 里面放一个 dictionary（键值对）。其中 key 键指的是所监听的事件名称，而值里面放的是事件发生后所要执行的方法。
+事件监听添加到模板的办法几乎是一样的：通过调用 `Template.templateName.events(...)` 里面放一个 dictionary（键值对）。其中 key 键指的是所监听的事件名称，而值里面放的是事件发生后所要执行的方法。
 
 In our case above, we are listening to the submit event on any element that matches the CSS selector .new-task. When this event is triggered by the user pressing enter inside the input field, our event handler function is called.
 
 在我们上面的例子中，我们监听了匹配这个 CSS 选择器 .new-task 的提交事件。当这些事件被用户在输入框中敲回车键时被触发，我们的事件响应方法就会被执行。
 
-The event handler gets an argument called event that has some information about the event that was triggered. In this case event.target is our form element, and we can get the value of our input with event.target.text.value. You can see all of the other properties of the event object by adding a console.log(event) and inspecting the object in your browser console.
+The event handler gets an argument called event that has some information about the event that was triggered. In this case event.target is our form element, and we can get the value of our input with event.target.text.value. You can see all of the other properties of the event object by adding a `console.log(event)` and inspecting the object in your browser console.
 
-接收事件的方法收到一个叫 event 的参数，里面包含触发的这个事件的一些信息。在这个例子里 event.target 就是我们的 form 对象，并且我们可以通过 event.target.text.value 来取得我们输入的值。你可以通过在你的浏览器控制台里添加一个 console.log(event) 来仔细观察这个事件对象的其他属性。
+接收事件的方法收到一个叫 event 的参数，里面包含触发的这个事件的一些信息。在这个例子里 event.target 就是我们的 form 对象，并且我们可以通过 event.target.text.value 来取得我们输入的值。你可以通过在你的浏览器控制台里添加一个 `console.log(event)` 来仔细观察这个事件对象的其他属性。
 
 The last two lines of our event handler perform some cleanup — first we make sure to make the input blank, and then we return false to tell the web browser to not do the default form submit action since we have already handled it.
 
 那接收事件的方法最后两行执行了一些清除工作——首先我们清空了输入框，其次我们返回了 false 告诉网页浏览器不要执行默认的表单提交动作，因为我们已经处理它了。
+
+### Inserting into a collection
+### 添加到集合
+
+Inside the event handler, we are adding a task to the tasks collection by calling `Tasks.insert()`. We can assign any properties to the task object, such as the time created, since we don't ever have to define a schema for the collection.
+
+在那个事件处理方法中，我们通过`Tasks.insert()`添加了一个任务到任务集合中。我们可以给这个任务对象附加任意属性，比如创建的时间，因为我们不需要给MongoDB的集体定义什么表结构。
+
+Being able to insert anything into the database from the client isn't very secure, but it's okay for now. In step 10 we'll learn how we can make our app secure and restrict how data is inserted into the database.
+
+虽然能从客户端插入东西到数据库不太安全，但目前来说是Okay的。在第10节我们将学习如何使我们的App更安全以及如何限定插入数据库的数据等。
+
+### Sorting our tasks
+### 对我们的任务列表进行排序
+
+Currently, our code displays all new tasks at the bottom of the list. That's not very good for a task list, because we want to see the newest tasks first.
+
+现在，我们的代码已经可以将最新的任务显示在列表的下方。但这对于任务列表来说并不好，因为我们总是希望先看到最新的任务。
+
+We can solve this by sorting the results using the createdAt field that is automatically added by our new code. Just add a sort option to the find call inside the tasks helper:
+
+我们可以通过让列表按（代码自动添加的）创建时间倒序来解决这个问题，只需要添加一个sort的选项到查询方法中：
+
+```
+Template.body.helpers({
+  tasks: function () {
+    // Show newest tasks first
+    return Tasks.find({}, {sort: {createdAt: -1}});
+  }
+});
+```
+
+In the next step, we'll add some very important todo list functions: checking off and deleting tasks.
+
+在下一节中，我们将添加非常有用的功能：完成任务和删除任务。
+
+#### See the code for step 4 on GitHub!
+  * [simple-todos.html](https://github.com/meteor/simple-todos/blob/9c24b998e540848f0dbc241702a4fcfa48fb9087/simple-todos.html)
+  * [simple-todos.js](https://github.com/meteor/simple-todos/blob/9c24b998e540848f0dbc241702a4fcfa48fb9087/simple-todos.js)
+  * [simple-todos.css](https://github.com/meteor/simple-todos/blob/9c24b998e540848f0dbc241702a4fcfa48fb9087/simple-todos.css)
+  * [diff of all files](https://github.com/meteor/simple-todos/commit/9c24b998e540848f0dbc241702a4fcfa48fb9087)
