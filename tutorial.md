@@ -352,3 +352,186 @@ In the next step, we'll add some very important todo list functions: checking of
   * [simple-todos.js](https://github.com/meteor/simple-todos/blob/9c24b998e540848f0dbc241702a4fcfa48fb9087/simple-todos.js)
   * [simple-todos.css](https://github.com/meteor/simple-todos/blob/9c24b998e540848f0dbc241702a4fcfa48fb9087/simple-todos.css)
   * [diff of all files](https://github.com/meteor/simple-todos/commit/9c24b998e540848f0dbc241702a4fcfa48fb9087)
+
+### Checking off and deleting tasks
+
+### Deploying your app
+
+### Running your app on Android or iOS
+
+### Storing temporary UI state in Session
+
+### Adding user accounts
+### 添加用户账号
+
+Meteor comes with an accounts system and a drop-in login user interface that lets you add multi-user functionality to your app in minutes.
+
+Meteor 有一个账户系统和一个内置的用户登录界面，从而可以让你分分钟添加多个用户的功能到App中。
+
+To enable the accounts system and UI, we need to add the relevant packages. In your app directory, run the following command:
+
+为了使用账户系统和界面，我们需要添加相应的包。在你的App目录下，运行如下命令：
+
+```
+meteor add accounts-ui accounts-password
+```
+
+In the HTML, right under the checkbox, include the following code to add a login dropdown:
+
+在那个HTML的右边checkbox下面，添加如下代码来加上一个登录下拉选项：
+
+```
+{{> loginButtons}}
+```
+
+Then, in your JavaScript, add the following code to configure the accounts UI to use usernames instead of email addresses:
+
+然后，在你的JavaScript，添加下面的代码来配置登录界面使用usernames而不是email地址：
+
+```
+// At the bottom of the client code
+Accounts.ui.config({
+  passwordSignupFields: "USERNAME_ONLY"
+});
+```
+
+Now users can create accounts and log into your app! This is very nice, but logging in and out isn't very useful yet. Let's add two functions:
+
+现在用户可以创建账户并且登录到你的App了！很爽吧，但登录和登出目前还没什么用。让我们加两个方法：
+
+  1. Only display the new task input field to logged in users
+  2. Show which user created each task
+
+  1. 只给登录的用户显示新任务的文本框。
+  2. 显示每个任务是哪个用户创建的。
+
+To do this, we will add two new fields to the tasks collection:
+
+为了实现它，我们将添加两个新字段到tasks的集合中：
+
+  1. owner - the _id of the user that created the task.
+  2. username - the username of the user that created the task. We will save the username directly in the task object so that we don't have to look up the user every time we display the task.
+
+  1. owner - 创建任务的用户的_id。
+  2. username - 创建任务的用户的username。我们将直接保存username到task对象中，这样我们就不用每次显示任务时再去查找user了。
+
+First, let's add some code to save these fields into the submit .new-task event handler:
+
+首先，让我们在提交.new-task的事件响应中添加一些代码保存这些字段：
+
+```
+Tasks.insert({
+  text: text,
+  createdAt: new Date(),            // current time
+  owner: Meteor.userId(),           // _id of logged in user
+  username: Meteor.user().username  // username of logged in user
+});
+```
+
+Then, in our HTML, add an #if block helper to only show the form when there is a logged in user:
+
+然后，在我们的HTML中，添加一个 ``#if`` 块，只有用户登录后才显示这个表单：
+
+```
+{{#if currentUser}}
+  <form class="new-task">
+    <input type="text" name="text" placeholder="Type to add new tasks" />
+  </form>
+{{/if}}
+```
+
+Finally, add a Spacebars statement to display the username field on each task right before the text:
+
+最后，添加一个Spacebars声明在任务右边显示用户名字段：
+
+```
+<span class="text"><strong>{{username}}</strong> - {{text}}</span>
+```
+
+Now, users can log in and we can track which user each task belongs to. Let's look at some of the concepts we just discovered in more detail.
+
+现在，用户可以登录并且我们可以知道每个任务属于哪个用户。让我们再仔细看一下刚才这些概念。
+
+
+
+### Security with methods
+### 用methods解决权限问题
+
+Before this step, any user of the app could edit any part of the database. This might be okay for very small internal apps or demos, but any real application needs to control permissions for its data. In Meteor, the best way to do this is by declaring methods. Instead of the client code directly calling insert, update, and remove, it will instead call methods that will check if the user is authorized to complete the action and then make any changes to the database on the client's behalf.
+
+在这一步之前，App的用户可以编辑任何数据库的任何部分。这在非常小的内部App或演示项目中还可以，但在实际应用中就需要控制数据权限。在Meteor，最好的办法就是通过声明methods。而不是客户端代码直接调用插入（insert），更新（update），和删除（delete），它将通过调用methods来检查用户是否被授权完成相应的动作，然后更改客户所属的数据库。
+
+#### Removing ``insecure``
+#### 移除``insecure``
+
+Every newly created Meteor project has the insecure package added by default. This is the package that allows us to edit the database from the client. It's useful when prototyping, but now we are taking off the training wheels. To remove this package, go to your app directory and run:
+
+每个新创建的Meteor项目都默认加入了insecure包。有了这个包才使得我们通过客户端去修改数据库。这在做原型时很有用，但现在我们要进入更深入的层次了。要移除这个包，进入到App目录并运行：
+
+```
+meteor remove insecure
+```
+
+If you try to use the app after removing this package, you will notice that none of the inputs or buttons work anymore. This is because all client-side database permissions have been revoked. Now we need to rewrite some parts of our app to use methods.
+
+如果你移除这个包后尝试运行App，你会发现所有的输入框或按钮都不能用了。这是因为所有客户端数据库权限已经被吊销了。现在我们需要使用methods重写我们App的相应代码了。
+
+#### Defining methods
+#### 定义methods
+
+First, we need to define some methods. We need one method for each database operation we want to perform on the client. Methods should be defined in code that is executed on the client and the server - we will discuss this a bit later in the section titled `Latency compensation`.
+
+首先，我们需要定义一些methods。我们需要给每一个想从客户端执行的数据库操作定义一个method。Methods应该定义在客户端和服务端需要执行的代码中——我们会在稍后的“延迟补偿”章节中讨论它。
+
+```
+// At the bottom of simple-todos.js, outside of the client-only block
+Meteor.methods({
+  addTask: function (text) {
+    // Make sure the user is logged in before inserting a task
+    if (! Meteor.userId()) {
+      throw new Meteor.Error("not-authorized");
+    }
+
+    Tasks.insert({
+      text: text,
+      createdAt: new Date(),
+      owner: Meteor.userId(),
+      username: Meteor.user().username
+    });
+  },
+  deleteTask: function (taskId) {
+    Tasks.remove(taskId);
+  },
+  setChecked: function (taskId, setChecked) {
+    Tasks.update(taskId, { $set: { checked: setChecked} });
+  }
+});
+```
+
+Now that we have defined our methods, we need to update the places we were operating on the collection to use the methods instead:
+
+现在我们已经定义了我们的methods，我们需要相应地更新操作集合的代码：
+
+```
+// replace Tasks.insert( ... ) with:
+Meteor.call("addTask", text);
+
+// replace Tasks.update( ... ) with:
+Meteor.call("setChecked", this._id, ! this.checked);
+
+// replace Tasks.remove( ... ) with:
+Meteor.call("deleteTask", this._id);
+```
+
+Now all of our inputs and buttons will start working again. What did we gain from all of this work?
+
+现在我们所有的输入框和按钮又可以用了。那么我们之前这些工作到底有什么用呢？
+
+  1. When we insert tasks into the database, we can now securely verify that the user is logged in, that the ``createdAt`` field is correct, and that the owner and username fields are correct and the user isn't impersonating anyone.
+  2. We can add extra validation logic to setChecked and deleteTask in later steps when users can make tasks private.
+  3. Our client code is now more separated from our database logic. Instead of a lot of stuff happening inside our event handlers, we now have methods that can be called from anywhere.
+
+  1. 当我们插入任务插入到数据库，我们现在可以安全地验证用户登录，``createdat``字段是正确的，而且老板和用户名域是正确的，用户不模仿任何人。 
+
+
+### Adding tasks with a form
